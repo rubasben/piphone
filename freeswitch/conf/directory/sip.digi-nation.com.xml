@@ -1,0 +1,33 @@
+<include>
+  
+  <domain name="sip.digi-nation.com">
+  
+    <params>
+      <param name="dial-string" value="{presence_id=${dialed_user}@${dialed_domain}}${sofia_contact(${dialed_user}@${dialed_domain})}"/>
+    </params>
+
+    <variables>
+      <variable name="record_stereo" value="true"/>
+
+      <!-- 
+       Defines the area code for this customers local calling area.
+       You can also define this per user, or per site, since some 
+       companies' have multiple offices in different area codes 
+      -->
+      <variable name="area_code" value="251"/>
+      <variable name="transfer_fallback_extension" value="operator"/>
+
+      <!-- 
+       define the outbound gateway to for dialing outside the domain 
+       defined per domain to allow different gateways for every domain
+      -->
+      <variable name="outbound_gateway" value="company-a.com-outbound"/>
+    </variables>
+ 
+    
+    <X-PRE-PROCESS cmd="include" data="sip.digi-nation.com/*.xml"/>
+
+  </domain>
+  
+</include>
+

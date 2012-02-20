@@ -1,0 +1,128 @@
+#### {{ PIPHONE 0.1 INSTALLATION HOWTO }} ####
+
+  Le processus d'installation de tous les composants du piphone est assez 
+  fastidieux, toutefois je vais essayer d'etre le plus precis et exaustif 
+  possible pour faciliter le processus.
+
+0. RECUPERATION DU DEPOT PIPHONE
+================================
+
+  Pour cela il suffit de taper dans la ligne de commande: 
+  
+  *git clone http://github.com/digination/piphone*
+  
+
+1. INSTALLATION DE FREESWITCH
+=============================
+
+  Une fois que le depot piphone a ete recupere, la seconde etape consiste a 
+  installer le serveur IPBX Freeswitch. Un script d'installation automatisee 
+  est fourni dans le depot, il s'agit du fichier piphone/freeswitch/install.sh
+  Ce script fonctionne sur les systeme Debian et apparentes ( Ubuntu Server, 
+  etc..) ainsi que sur CentOS. Si le systeme hote n'est pas un de ceux la, il 
+  faudra utiliser systeme de packages du systeme en question, ou installer 
+  depuis les sources. En considerant que c'est le cas, il faut donc lancer la 
+  commande depuis la racine du depot piphone:
+
+    *./freeswitch/install.sh*
+
+  L'installation ainsi qu'une partie de la configuration de freeswitch va donc 
+  se faire automatiquement, celui-ci etant installe par defaut dans 
+  /usr/local/freeswitch.
+
+  Note: Freeswitch depend d'un nombre consequent de librairies, ne pas 
+  s'etonner donc si celui-ci requiert l'installation de nombreux packages 
+  via apt.
+
+2. CONFIGURATION DE FREESWITCH
+==============================
+
+  Faire fonctionner Freeswitch est normalement l'etape qui prend le plus 
+  de temps si l'on ne connait pas le serveur,celui-ci disposant d'une 
+  arborescence de configuration xml relativement touffue (dans la veine 
+  d'un serveur d'application JAVA </troll>).Cela dit, ca ne devrait pas etre 
+  trop difficile avec les bonnes indications.
+
+  2.1. CONFIGURATION DU SIP TRUNK
+  -------------------------------
+  
+  Pour configurer l'utilisation d'un sip trunk externe dans Freeswitch, 
+  il faut creer un nouveau fichier xml dans /usr/local/freeswitch/conf/
+  sip_profiles/external.
+
+  Il y a un exemple de configuration fourni, le fichier sip.ovh.net.xml qui se 
+  trouve dans <PIPHONE_REPOS_ROOT>/freeswicth/conf/sip_profiles/external. 
+  il suffit de alors changer les markups/attributs xml suivant leur nom, qui 
+  sont suffisament explicites pour ne pas s'appesentir dessus.
+    
+  2.3. BRIDGE ET ANNONCE SONNORE
+  ------------------------------
+
+  Nous allons mettre en place le script de bridge pour freeswitch, ainsi 
+  que l'annonce sonore de mise en relation, cette operation est tres simple:
+
+  *cp <PIPHONE_REPOS_ROOT>/freeswitch/scripts/bridge.lua /usr/local/freeswitch/scripts/*
+
+  *cp <PIPHONE_REPOS_ROOT>/freeswitch/sounds/lqdn_ann.wav /usr/local/freeswitch/sounds/*
+
+  2.4. LANCEMENT DE FREESWITCH
+  ----------------------------
+
+    l'installation par defaut de freeswitch n'inclut pas de script d'init, 
+    toutesfois il n'est pas tres complique d'en faire un. Pour lancer le 
+    demon freeswitch, il suffit d'executer /usr/loca/freeswitch/
+    bin/freeswitch -nonat ( le flag nonat sert a bypasser les fonctionalites 
+    STUN/ICE/UPNP, qui sont inutiles lorsque le serveur dispose d'une ip 
+    publique.
+
+3. INSTALLATION DE PLIVO
+========================
+
+  Nous allons a present proceder a l'installation de plivo. pour rappel, plivo 
+  est le composant qui fait le lien entre l'IPBX freeswitch et la couche Web. 
+  Il s'agit d'un serveur en liaison directe avec Freeswitch, et pouvant etre 
+  requete via une API RESTFUL.
+
+  Pour commencer il faut cloner le depot plivo qui contient les patchs que 
+  j'ai produit:
+
+    *git clone http://github.com/digination/plivo*
+
+  Une fois cela fait, il suffit a nouveau de lancer le script d'installation 
+  automatique, se trouvant dans le depot nouvellement clone:
+
+    *./<PLIVO_REPOS_ROOT>/plivo/scripts/plivo_install.sh*
+
+  Par defaut, plivo s'installe dans /usr/local/plivo.
+
+  3.1. CONFIGURATION DE PLIVO
+  ---------------------------
+
+    Une fois le script d'installation automatique termine, il faut modifier le 
+    fichier /usr/local/plivo/etc/default.conf, et remplir les variables AUTH_ID 
+    et AUTH_TOKEN avec des chaines aleatoires, de preference > 10 characteres.
+    
+
+  3.2 LANCEMENT DE PLIVO
+  ----------------------
+
+    plivo dispose d'un script d'init qu'il installe lui meme, il suffit donc 
+    de lancer /etc/init.d/plivo start
+
+4. PARTIE WEB, LE PIPHONE EN LUI MEME
+=====================================
+
+  ici rien de spectaculaire, sur le meme serveur que freeswitch/plivo, il 
+  suffit de copier <PIPHONE_REPOS_ROOT>/piphone et de le faire servir par un 
+  serveur d'applications supportant php5 ( ne necessite pas de modules 
+  particuliers a part curl).
+
+  Ensuite, il faut modifier le contenu de piphone/conf/config.inc.php, et 
+  changer les parametres $accountSid et $authtoken, qu'il faut remplir avec 
+  les 2 chaines aleatoires precedement definies dans la configuration de plivo.
+  Il faut egalement changer la variable $sipconf avec le nom de la gateway sip 
+  configuree precedemment dans Freeswitch (l'attribut <gateway name="" dans le
+  fichier xml cree dans sip_profiles/external). 
+  
+  Pour lancer un nouveau call, il faut requeter la page piphone/test.php, 
+  le lien qui s'y trouve lance un popup qui contient l'application piphone.
